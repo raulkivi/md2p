@@ -62,6 +62,50 @@ This prints the processed Markdown to stdout. Redirect output to a file if desir
 python3 mtp.py README.md > out.txt
 ```
 
+### Example: Markdown Table
+
+Tables are rendered as bordered ASCII grids with aligned columns.
+
+**Source Markdown:**
+
+```markdown
+| Name  | Age | City   |
+|-------|-----|--------|
+| Alice | 30  | London |
+| Bob   | 25  | Paris  |
+```
+
+**Terminal output:**
+
+```
+┌───────┬─────┬────────┐
+│ Name  │ Age │ City   │
+├───────┼─────┼────────┤
+│ Alice │ 30  │ London │
+│ Bob   │ 25  │ Paris  │
+└───────┴─────┴────────┘
+```
+
+### Example: Non-printable Characters
+
+Non-printable characters (anything that is not a printable Unicode character, newline, carriage return, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible.
+
+Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`.
+
+**Source Markdown** (paragraph contains a raw `BEL` U+0007 and a `NULL` U+0000):
+
+```
+This line has a bell \x07 and a null \x00 byte inside.
+```
+
+**Terminal output** (markers rendered on a red background):
+
+```
+This line has a bell <07> and a null <00> byte inside.
+```
+
+The surrounding text is printed normally; only the offending bytes are highlighted, making it easy to spot encoding errors or accidental binary content in Markdown source files.
+
 ## Development & Tests
 
 Run the existing tests with `pytest`:

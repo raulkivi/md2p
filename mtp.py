@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """mtp - Markdown Print: formats Markdown files for terminal output using VT220 escape sequences."""
 
+__version__ = "0.1"
+
+MAX_INPUT_BYTES = 50 * 1024 * 1024  # 50 MB – reject inputs larger than this
+
 import os
 import re
 import shutil
@@ -23,6 +27,8 @@ FG_BLUE    = '\033[34m'
 FG_MAGENTA = '\033[35m'
 FG_CYAN    = '\033[36m'
 
+BG_RED     = '\033[41m'
+
 
 def get_terminal_width():
     """Return the current terminal column width, defaulting to 80."""
@@ -30,6 +36,36 @@ def get_terminal_width():
         return shutil.get_terminal_size().columns
     except Exception:
         return 80
+
+
+# ---------------------------------------------------------------------------
+# Input sanitisation
+# ---------------------------------------------------------------------------
+
+_ANSI_ESCAPE_RE = re.compile(r'\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+
+def _strip_ansi_escapes(text: str) -> str:
+    """Remove raw ANSI/VT terminal escape sequences from untrusted input."""
+    return _ANSI_ESCAPE_RE.sub('', text)
+
+
+_ALLOWED_NONPRINTABLE = frozenset('\n\r\t ')
+
+
+def _replace_nonprintable(text: str) -> str:
+    """Replace non-printable characters (except LF, CR, TAB, space) with
+    a red-background hex representation: <HH> for single-byte codepoints,
+    <H0,H1,...> for multi-byte UTF-8 encodings."""
+    parts: list[str] = []
+    for ch in text:
+        if ch in _ALLOWED_NONPRINTABLE or ch.isprintable():
+            parts.append(ch)
+        else:
+            encoded = ch.encode('utf-8')
+            hex_str = ','.join(f'{b:02X}' for b in encoded)
+            parts.append(f'{BG_RED}<{hex_str}>{RESET}')
+    return ''.join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +79,7 @@ def format_inline(text):
     code_spans: list[str] = []
 
     def _save_code(m):
-        placeholder = f'\x00CODE{len(code_spans)}\x00'
+        placeholder = f'\x02CODE_{len(code_spans)}_\x03'
         code_spans.append(f'{REVERSE}{m.group(1)}{RESET}')
         return placeholder
 
@@ -53,7 +89,7 @@ def format_inline(text):
     text = re.sub(r'\*\*\*(.+?)\*\*\*',
                   lambda m: f'{BOLD}{ITALIC}{m.group(1)}{RESET}',
                   text)
-    text = re.sub(r'___(.+?)___',
+    text = re.sub(r'(?<!\w)___(.+?)___(?!\w)',
                   lambda m: f'{BOLD}{ITALIC}{m.group(1)}{RESET}',
                   text)
 
@@ -61,7 +97,7 @@ def format_inline(text):
     text = re.sub(r'\*\*(.+?)\*\*',
                   lambda m: f'{BOLD}{m.group(1)}{RESET}',
                   text)
-    text = re.sub(r'__(.+?)__',
+    text = re.sub(r'(?<!\w)__(.+?)__(?!\w)',
                   lambda m: f'{BOLD}{m.group(1)}{RESET}',
                   text)
 
@@ -69,7 +105,7 @@ def format_inline(text):
     text = re.sub(r'\*(.+?)\*',
                   lambda m: f'{ITALIC}{m.group(1)}{RESET}',
                   text)
-    text = re.sub(r'_(.+?)_',
+    text = re.sub(r'(?<!\w)_(.+?)_(?!\w)',
                   lambda m: f'{ITALIC}{m.group(1)}{RESET}',
                   text)
 
@@ -86,7 +122,7 @@ def format_inline(text):
 
     # Step 3: Restore saved inline code spans
     for idx, span in enumerate(code_spans):
-        text = text.replace(f'\x00CODE{idx}\x00', span)
+        text = text.replace(f'\x02CODE_{idx}_\x03', span)
 
     return text
 
@@ -105,7 +141,8 @@ def format_header(level, text):
         return ' ' * padding + f'{BOLD}{UNDERLINE}{FG_YELLOW}{formatted}{RESET}'
 
     if level == 2:
-        rule = FG_CYAN + '─' * min(len(text), width) + RESET
+        visible_len = len(re.sub(r'\*+|_+|`', '', text))
+        rule = FG_CYAN + '─' * min(visible_len, width) + RESET
         return f'{BOLD}{FG_CYAN}{formatted}{RESET}\n{rule}'
 
     if level == 3:
@@ -169,29 +206,45 @@ def format_table(rows):
     display_rows = [header] + data_rows
     num_cols = max(len(row) for row in display_rows)
 
-    # Column widths are computed from raw (unformatted) cell content
-    col_widths = [0] * num_cols
+    # Pre-format every cell so that visible widths (after ANSI stripping) drive
+    # column sizing and padding — raw Markdown length is not a reliable measure
+    # because inline formatting (e.g. `code`) removes markup characters.
+    formatted_rows = []
     for row in display_rows:
-        for i, cell in enumerate(row):
-            col_widths[i] = max(col_widths[i], len(cell.strip()))
+        fmt_row = [format_inline(row[i].strip()) if i < len(row) else ''
+                   for i in range(num_cols)]
+        formatted_rows.append(fmt_row)
+
+    def _visible_len(s):
+        return len(_strip_ansi_escapes(s))
+
+    col_widths = [0] * num_cols
+    for fmt_row in formatted_rows:
+        for i, cell in enumerate(fmt_row):
+            col_widths[i] = max(col_widths[i], _visible_len(cell))
     col_widths = [max(w, 1) for w in col_widths]
 
-    def separator():
-        return '+' + '+'.join('-' * (w + 2) for w in col_widths) + '+'
+    def sep_top():
+        return '┌' + '┬'.join('─' * (w + 2) for w in col_widths) + '┐'
 
-    def table_row(cells):
+    def sep_mid():
+        return '├' + '┼'.join('─' * (w + 2) for w in col_widths) + '┤'
+
+    def sep_bot():
+        return '└' + '┴'.join('─' * (w + 2) for w in col_widths) + '┘'
+
+    def table_row(fmt_cells):
         parts = []
         for i, w in enumerate(col_widths):
-            raw  = cells[i].strip() if i < len(cells) else ''
-            fmt  = format_inline(raw)
-            pad  = w - len(raw)
+            fmt = fmt_cells[i] if i < len(fmt_cells) else ''
+            pad = w - _visible_len(fmt)
             parts.append(f' {fmt}{" " * pad} ')
-        return '|' + '|'.join(parts) + '|'
+        return '│' + '│'.join(parts) + '│'
 
-    lines = [separator(), table_row(header), separator()]
-    for row in data_rows:
-        lines.append(table_row(row))
-    lines.append(separator())
+    lines = [sep_top(), table_row(formatted_rows[0]), sep_mid()]
+    for fmt_row in formatted_rows[1:]:
+        lines.append(table_row(fmt_row))
+    lines.append(sep_bot())
 
     return '\n'.join(lines)
 
@@ -300,6 +353,9 @@ def render_markdown(content):
 
 def main():
     if len(sys.argv) >= 2:
+        if sys.argv[1] in ("-v", "--version"):
+            print(__version__)
+            sys.exit(0)
         # Mode 2: mtp example.md
         filename = sys.argv[1]
         if not os.path.exists(filename):
@@ -307,8 +363,16 @@ def main():
             sys.exit(1)
         try:
             with open(filename, encoding='utf-8') as fh:
-                content = fh.read()
-        except IOError as exc:
+                content = fh.read(MAX_INPUT_BYTES + 1)
+            if len(content) > MAX_INPUT_BYTES:
+                print(
+                    f'{FG_RED}Error:{RESET} File too large'
+                    f' (max {MAX_INPUT_BYTES // (1024 * 1024)} MB)',
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            content = _strip_ansi_escapes(content)
+        except (IOError, UnicodeDecodeError) as exc:
             print(f'{FG_RED}Error:{RESET} Cannot read file: {exc}', file=sys.stderr)
             sys.exit(1)
     else:
@@ -321,11 +385,20 @@ def main():
             )
             sys.exit(1)
         try:
-            content = sys.stdin.read()
-        except IOError as exc:
+            content = sys.stdin.read(MAX_INPUT_BYTES + 1)
+            if len(content) > MAX_INPUT_BYTES:
+                print(
+                    f'{FG_RED}Error:{RESET} Input too large'
+                    f' (max {MAX_INPUT_BYTES // (1024 * 1024)} MB)',
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            content = _strip_ansi_escapes(content)
+        except (IOError, UnicodeDecodeError) as exc:
             print(f'{FG_RED}Error:{RESET} Cannot read stdin: {exc}', file=sys.stderr)
             sys.exit(1)
 
+    content = _replace_nonprintable(content)
     print(render_markdown(content))
 
 

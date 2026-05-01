@@ -5,8 +5,10 @@ import re
 import pytest
 
 from mtp import (
+    BG_RED,
     BOLD, DIM, FG_CYAN, FG_MAGENTA, FG_YELLOW,
     ITALIC, RESET, REVERSE, UNDERLINE,
+    _replace_nonprintable,
     format_header,
     format_inline,
     format_table,
@@ -15,6 +17,58 @@ from mtp import (
     parse_table_row,
     render_markdown,
 )
+
+
+# ---------------------------------------------------------------------------
+# _replace_nonprintable
+# ---------------------------------------------------------------------------
+
+class TestReplaceNonprintable:
+    def test_printable_text_unchanged(self):
+        assert _replace_nonprintable('Hello, World!') == 'Hello, World!'
+
+    def test_lf_allowed(self):
+        assert _replace_nonprintable('line1\nline2') == 'line1\nline2'
+
+    def test_cr_allowed(self):
+        assert _replace_nonprintable('line\r\n') == 'line\r\n'
+
+    def test_tab_allowed(self):
+        assert _replace_nonprintable('col1\tcol2') == 'col1\tcol2'
+
+    def test_space_allowed(self):
+        assert _replace_nonprintable('a b') == 'a b'
+
+    def test_null_byte_replaced(self):
+        assert _replace_nonprintable('\x00') == f'{BG_RED}<00>{RESET}'
+
+    def test_bell_replaced(self):
+        assert _replace_nonprintable('\x07') == f'{BG_RED}<07>{RESET}'
+
+    def test_esc_replaced(self):
+        assert _replace_nonprintable('\x1b') == f'{BG_RED}<1B>{RESET}'
+
+    def test_del_replaced(self):
+        assert _replace_nonprintable('\x7f') == f'{BG_RED}<7F>{RESET}'
+
+    def test_vertical_tab_replaced(self):
+        assert _replace_nonprintable('\x0b') == f'{BG_RED}<0B>{RESET}'
+
+    def test_form_feed_replaced(self):
+        assert _replace_nonprintable('\x0c') == f'{BG_RED}<0C>{RESET}'
+
+    def test_multibyte_nonprintable_unicode(self):
+        # U+0080 encodes as 0xC2 0x80 in UTF-8
+        assert _replace_nonprintable('\x80') == f'{BG_RED}<C2,80>{RESET}'
+
+    def test_mixed_text(self):
+        assert _replace_nonprintable('hello\x00world') == f'hello{BG_RED}<00>{RESET}world'
+
+    def test_multiple_adjacent_nonprintable(self):
+        assert _replace_nonprintable('\x01\x02') == f'{BG_RED}<01>{RESET}{BG_RED}<02>{RESET}'
+
+    def test_only_allowed_whitespace_unchanged(self):
+        assert _replace_nonprintable('\t\n\r ') == '\t\n\r '
 
 
 # ---------------------------------------------------------------------------
@@ -209,8 +263,8 @@ class TestFormatTable:
             [' Cell 1 ', ' Cell 2 '],
         ]
         result = format_table(rows)
-        assert '+' in result
-        assert '|' in result
+        assert '┌' in result
+        assert '│' in result
         assert 'Header 1' in result
         assert 'Cell 1' in result
 
@@ -223,7 +277,7 @@ class TestFormatTable:
         result = format_table(rows)
         # The raw dashes from the separator row must not appear as a data row
         for line in result.split('\n'):
-            if '|' in line:
+            if '│' in line:
                 assert not all(
                     re.match(r'^:?-+:?$', c.strip()) for c in line.strip('|').split('|')
                 )
@@ -236,8 +290,8 @@ class TestFormatTable:
         ]
         result = format_table(rows)
         table_lines = result.split('\n')
-        assert table_lines[0].startswith('+')
-        assert table_lines[-1].startswith('+')
+        assert table_lines[0].startswith('┌')
+        assert table_lines[-1].startswith('└')
 
     def test_column_widths_align(self):
         rows = [
@@ -358,7 +412,7 @@ class TestRenderMarkdown:
         assert 'H2' in result
         assert 'A' in result
         assert 'B' in result
-        assert '+' in result
+        assert '┌' in result
 
     def test_blank_lines_preserved(self):
         result = render_markdown('para1\n\npara2')
