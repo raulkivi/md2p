@@ -62,6 +62,37 @@ This prints the processed Markdown to stdout. Redirect output to a file if desir
 python3 mtp.py README.md > out.txt
 ```
 
+You can also pipe Markdown in on stdin:
+
+```bash
+cat README.md | mtp
+```
+
+### Options
+
+- `-v`, `--version` — print the version and exit.
+- `-n`, `--nroff` — emit nroff overstrike sequences (`X⌫X` for bold, `_⌫X` for
+  underline) instead of ANSI colour escapes. This is for viewers that interpret
+  the classic nroff bold/underline convention but not ANSI SGR colours — most
+  notably Midnight Commander's internal file viewer in `nroff` mode. Colours,
+  dim and italic are mapped onto the two available styles (bold / underline).
+
+### Midnight Commander integration
+
+To preview Markdown with formatting inside `mc`'s internal viewer (F3), add the
+following to `~/.config/mc/mc.ext.ini`:
+
+```ini
+[markdown]
+Regex=\.(md|mkd|mdown|markdown)$
+RegexIgnoreCase=true
+View=%view{nroff} mtp --nroff %f
+```
+
+`%view{nroff}` tells the internal viewer to interpret the overstrike sequences
+produced by `mtp --nroff`. For full ANSI colour instead, drop `%view` and pipe
+through a colour-capable pager: `View=mtp %f | less -R`.
+
 ### Example: Markdown Table
 
 Tables are rendered as bordered ASCII grids with aligned columns.

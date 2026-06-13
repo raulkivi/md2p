@@ -9,6 +9,8 @@ from mtp import (
     BOLD, DIM, FG_CYAN, FG_MAGENTA, FG_YELLOW,
     ITALIC, RESET, REVERSE, UNDERLINE,
     _replace_nonprintable,
+    _strip_ansi_escapes,
+    ansi_to_nroff,
     format_header,
     format_inline,
     format_table,
@@ -141,6 +143,21 @@ class TestFormatInline:
         result = format_inline('`**not bold**`')
         # The literal ** characters should appear inside the reversed region
         assert '**not bold**' in result
+
+    def test_link_after_emphasis_not_corrupted(self):
+        # Regression: emphasis substitutions insert escape codes containing a
+        # literal '[' (e.g. "\033[1m"). The link regex must not match that '['
+        # and swallow the whole span. The visible text must be intact.
+        result = format_inline('**bold** and a [link](http://x)')
+        assert _strip_ansi_escapes(result) == 'bold and a link (http://x)'
+        # No double-escape artefact from a mis-matched link replacement.
+        assert '\033\033' not in result
+
+    def test_link_url_with_underscores_not_italicised(self):
+        # Regression: a URL containing underscores must not be mangled by the
+        # underscore-italic pattern (the link is stashed before emphasis runs).
+        result = format_inline('see [docs](http://x/a_b_c)')
+        assert 'http://x/a_b_c' in _strip_ansi_escapes(result)
 
 
 # ---------------------------------------------------------------------------
@@ -519,3 +536,72 @@ class TestMain:
         assert exc_info.value.code == 1
         err = capsys.readouterr().err
         assert 'Error' in err
+
+    def test_nroff_flag_produces_overstrike(self, tmp_path):
+        """mtp --nroff file.md emits nroff overstrike, not ANSI escapes."""
+        import io
+        import sys
+        from mtp import main
+
+        md_file = tmp_path / 'sample.md'
+        md_file.write_text('**bold**', encoding='utf-8')
+
+        captured = io.StringIO()
+        old_argv, old_stdout = sys.argv, sys.stdout
+        try:
+            sys.argv = ['mtp', '--nroff', str(md_file)]
+            sys.stdout = captured
+            main()
+        finally:
+            sys.argv = old_argv
+            sys.stdout = old_stdout
+
+        out = captured.getvalue()
+        assert '\b' in out          # overstrike sequences present
+        assert '\033' not in out    # no raw ANSI escapes remain
+        # "bold" rendered as nroff overstrike bold (each char doubled via BS).
+        assert 'b\bbo\bol\bld\bd' in out
+        # Recovering the first char of each overstrike pair yields the text.
+        assert re.sub(r'(.)\x08\1', r'\1', out).strip() == 'bold'
+
+
+# ---------------------------------------------------------------------------
+# ansi_to_nroff  (Midnight Commander internal-viewer overstrike conversion)
+# ---------------------------------------------------------------------------
+
+class TestAnsiToNroff:
+    def test_plain_text_unchanged(self):
+        assert ansi_to_nroff('plain text') == 'plain text'
+
+    def test_bold_becomes_overstrike_bold(self):
+        assert ansi_to_nroff(f'{BOLD}x{RESET}') == 'x\bx'
+
+    def test_underline_becomes_overstrike_underline(self):
+        assert ansi_to_nroff(f'{UNDERLINE}x{RESET}') == '_\bx'
+
+    def test_italic_maps_to_underline(self):
+        assert ansi_to_nroff(f'{ITALIC}x{RESET}') == '_\bx'
+
+    def test_reverse_maps_to_bold(self):
+        assert ansi_to_nroff(f'{REVERSE}x{RESET}') == 'x\bx'
+
+    def test_colour_alone_is_plain(self):
+        assert ansi_to_nroff(f'{FG_CYAN}x{RESET}') == 'x'
+
+    def test_dim_alone_is_plain(self):
+        assert ansi_to_nroff(f'{DIM}x{RESET}') == 'x'
+
+    def test_bold_and_underline_prefers_bold(self):
+        assert ansi_to_nroff(f'{BOLD}{UNDERLINE}x{RESET}') == 'x\bx'
+
+    def test_reset_clears_attributes(self):
+        assert ansi_to_nroff(f'{BOLD}a{RESET}b') == 'a\bab'
+
+    def test_whitespace_not_overstruck(self):
+        assert ansi_to_nroff(f'{BOLD}a b{RESET}') == 'a\ba b\bb'
+
+    def test_multi_char_bold_run(self):
+        assert ansi_to_nroff(f'{BOLD}hi{RESET}') == 'h\bhi\bi'
+
+    def test_no_residual_escape_chars(self):
+        assert '\033' not in ansi_to_nroff(f'{FG_YELLOW}{BOLD}Title{RESET}')

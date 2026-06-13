@@ -74,16 +74,34 @@ def _replace_nonprintable(text: str) -> str:
 
 def format_inline(text):
     """Apply inline Markdown formatting and return VT220-escaped text."""
-    # Step 1: Extract inline code spans into placeholders so that their
-    # content is not re-processed by subsequent patterns.
-    code_spans: list[str] = []
+    # Step 1: Extract spans whose rendered form must not be re-processed by
+    # later patterns into placeholders. This covers inline code (its content
+    # is literal) as well as links/images: their replacement text contains
+    # escape sequences (e.g. "\033[4m") whose literal '[' would otherwise be
+    # matched by the link regex, and their URLs may contain '*' or '_' that
+    # the emphasis patterns would mangle.
+    spans: list[str] = []
 
-    def _save_code(m):
-        placeholder = f'\x02CODE_{len(code_spans)}_\x03'
-        code_spans.append(f'{REVERSE}{m.group(1)}{RESET}')
+    def _stash(rendered):
+        placeholder = f'\x02SPAN_{len(spans)}_\x03'
+        spans.append(rendered)
         return placeholder
 
-    text = re.sub(r'`([^`]+)`', _save_code, text)
+    # Inline code  `code`
+    text = re.sub(r'`([^`]+)`',
+                  lambda m: _stash(f'{REVERSE}{m.group(1)}{RESET}'),
+                  text)
+
+    # Image  ![alt](url)  – before link so the ! is not swallowed
+    text = re.sub(r'!\[([^\]]*)\]\([^)]+\)',
+                  lambda m: _stash(f'{FG_MAGENTA}[Image: {m.group(1)}]{RESET}'),
+                  text)
+
+    # Link  [text](url)
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)',
+                  lambda m: _stash(f'{UNDERLINE}{m.group(1)}{RESET}'
+                                   f' ({FG_CYAN}{m.group(2)}{RESET})'),
+                  text)
 
     # Bold + italic  (*** or ___)
     text = re.sub(r'\*\*\*(.+?)\*\*\*',
@@ -109,20 +127,9 @@ def format_inline(text):
                   lambda m: f'{ITALIC}{m.group(1)}{RESET}',
                   text)
 
-    # Image  ![alt](url)  – before link so the ! is not swallowed
-    text = re.sub(r'!\[([^\]]*)\]\([^)]+\)',
-                  lambda m: f'{FG_MAGENTA}[Image: {m.group(1)}]{RESET}',
-                  text)
-
-    # Link  [text](url)
-    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)',
-                  lambda m: (f'{UNDERLINE}{m.group(1)}{RESET}'
-                             f' ({FG_CYAN}{m.group(2)}{RESET})'),
-                  text)
-
-    # Step 3: Restore saved inline code spans
-    for idx, span in enumerate(code_spans):
-        text = text.replace(f'\x02CODE_{idx}_\x03', span)
+    # Step 3: Restore protected spans
+    for idx, span in enumerate(spans):
+        text = text.replace(f'\x02SPAN_{idx}_\x03', span)
 
     return text
 
@@ -348,16 +355,90 @@ def render_markdown(content):
 
 
 # ---------------------------------------------------------------------------
+# nroff overstrike conversion (for Midnight Commander's internal viewer)
+# ---------------------------------------------------------------------------
+
+_SGR_RE = re.compile(r'\033\[([0-9;]*)m')
+
+
+def ansi_to_nroff(text: str) -> str:
+    """Convert ANSI/VT220-formatted output into nroff overstrike sequences.
+
+    Midnight Commander's internal viewer (in `nroff` mode) does not understand
+    ANSI SGR colour escapes; it only renders the classic nroff overstrike
+    conventions, colouring them with its own viewer theme:
+
+        bold      ->  ``X\\bX``   (character, backspace, same character)
+        underline ->  ``_\\bX``   (underscore, backspace, character)
+
+    There is no colour or italic primitive, so attributes are mapped to the
+    nearest of the two available styles:
+
+        bold (1), reverse (7)      -> overstrike bold
+        italic (3), underline (4)  -> overstrike underline
+        dim (2), colours, reset    -> plain text
+
+    When a span is both bold and underline (e.g. the H1 header style) bold
+    wins, since it is the more legible of the two in MC's viewer.
+    """
+    out: list[str] = []
+    bold = under = False
+    i, n = 0, len(text)
+    while i < n:
+        m = _SGR_RE.match(text, i)
+        if m:
+            params = m.group(1)
+            for code in (params.split(';') if params else ['0']):
+                code = code or '0'
+                if code == '0':
+                    bold = under = False
+                elif code in ('1', '7'):       # bold, reverse
+                    bold = True
+                elif code in ('3', '4'):       # italic, underline
+                    under = True
+                # dim (2) and colour codes carry no nroff equivalent -> ignore
+            i = m.end()
+            continue
+
+        ch = text[i]
+        i += 1
+        if ch == '\033':
+            # Drop any stray non-SGR escape sequence defensively.
+            esc = _ANSI_ESCAPE_RE.match(text, i - 1)
+            if esc:
+                i = esc.end()
+            continue
+        if ch.isspace() or not ch.isprintable():
+            out.append(ch)
+        elif bold:
+            out.append(f'{ch}\b{ch}')
+        elif under:
+            out.append(f'_\b{ch}')
+        else:
+            out.append(ch)
+    return ''.join(out)
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
 def main():
-    if len(sys.argv) >= 2:
-        if sys.argv[1] in ("-v", "--version"):
+    # Parse flags, leaving positional arguments (the filename) in *rest*.
+    nroff = False
+    rest: list[str] = []
+    for arg in sys.argv[1:]:
+        if arg in ("-v", "--version"):
             print(__version__)
             sys.exit(0)
+        elif arg in ("-n", "--nroff"):
+            nroff = True
+        else:
+            rest.append(arg)
+
+    if rest:
         # Mode 2: mtp example.md
-        filename = sys.argv[1]
+        filename = rest[0]
         if not os.path.exists(filename):
             print(f'{FG_RED}Error:{RESET} File not found: {filename}', file=sys.stderr)
             sys.exit(1)
@@ -399,7 +480,10 @@ def main():
             sys.exit(1)
 
     content = _replace_nonprintable(content)
-    print(render_markdown(content))
+    rendered = render_markdown(content)
+    if nroff:
+        rendered = ansi_to_nroff(rendered)
+    print(rendered)
 
 
 if __name__ == '__main__':
