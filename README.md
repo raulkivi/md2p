@@ -101,6 +101,66 @@ View=%view{nroff} md2p --nroff %f
 produced by `md2p --nroff`. For full ANSI colour instead, drop `%view` and pipe
 through a colour-capable pager: `View=md2p %f | less -R`.
 
+### Example: Headers
+
+Each ATX header level (`#` through `######`) gets distinct styling — H1 is centred, bold, underlined; H2 gets an underline rule; H3–H6 step down through bold, dim, italic, and plain dim text.
+
+**Source Markdown:**
+
+```markdown
+# H1 Centered Title
+## H2 Section With Rule
+### H3 Subsection
+#### H4 Minor Heading
+##### H5 Detail
+###### H6 Fine Print
+```
+
+**Terminal output:**
+
+![Headers rendered by md2p, showing each of the six distinct heading styles](img/headers.svg)
+
+### Example: Inline Formatting
+
+Bold, italic, bold+italic, inline code, links, and images are all styled distinctly.
+
+**Source Markdown:**
+
+```markdown
+Plain text with **bold**, *italic*, and ***bold italic***.
+
+Also `inline code`, a [link](https://example.com/docs), and an image ![diagram](diagram.png).
+```
+
+**Terminal output:**
+
+![Inline formatting rendered by md2p: bold, italic, bold italic, inline code, a link, and an image placeholder](img/inline-formatting.svg)
+
+### Example: Lists, Blockquotes & Code Blocks
+
+**Source Markdown:**
+
+````markdown
+- Top level item
+  - Nested item
+1. First step
+2. Second step
+
+> A blockquote spanning
+> the important caveat.
+
+---
+
+```
+def hello():
+    print('hi')
+```
+````
+
+**Terminal output:**
+
+![Nested lists, a blockquote, a horizontal rule, and a fenced code block rendered by md2p](img/lists-and-blocks.svg)
+
 ### Example: Markdown Table
 
 Tables are rendered as bordered ASCII grids with aligned columns.
@@ -116,20 +176,11 @@ Tables are rendered as bordered ASCII grids with aligned columns.
 
 **Terminal output:**
 
-```
-┌───────┬─────┬────────┐
-│ Name  │ Age │ City   │
-├───────┼─────┼────────┤
-│ Alice │ 30  │ London │
-│ Bob   │ 25  │ Paris  │
-└───────┴─────┴────────┘
-```
+![A three-column Markdown table rendered by md2p as a bordered ASCII grid](img/table.svg)
 
-### Example: Non-printable Characters
+### Example: Non-printable Characters & Hidden Watermarks
 
-Non-printable characters (anything that is not a printable Unicode character, newline, carriage return, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible.
-
-Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`.
+Non-printable characters (anything that is not a printable Unicode character, newline, carriage return, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible. Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`.
 
 **Source Markdown** (paragraph contains a raw `BEL` U+0007 and a `NULL` U+0000):
 
@@ -137,11 +188,9 @@ Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<
 This line has a bell \x07 and a null \x00 byte inside.
 ```
 
-**Terminal output** (markers rendered on a red background):
+**Terminal output:**
 
-```
-This line has a bell <07> and a null <00> byte inside.
-```
+![A bell and a null byte highlighted with red-background hex markers by md2p](img/nonprintable.svg)
 
 The surrounding text is printed normally; only the offending bytes are highlighted, making it easy to spot encoding errors or accidental binary content in Markdown source files.
 

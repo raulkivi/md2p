@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="574" height="342" viewBox="0 0 574 342" font-family="DejaVu Sans Mono, monospace">
+<rect x="0" y="0" width="574" height="342" rx="10" fill="#282c34"/>
+<circle cx="22" cy="20" r="6" fill="#e06c75"/>
+<circle cx="42" cy="20" r="6" fill="#e5c07b"/>
+<circle cx="62" cy="20" r="6" fill="#98c379"/>
+<text x="287" y="24" text-anchor="middle" font-size="12" fill="#6b7280">md2p — lists, blockquotes &amp; code</text>
+<line x1="0" y1="34" x2="574" y2="34" stroke="#1c1f26" stroke-width="1"/>
+<text x="18.0" y="58.0" xml:space="preserve" font-size="14" fill="#e5c07b" textLength="8.4" lengthAdjust="spacingAndGlyphs">•</text>
+<text x="26.4" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="126.0" lengthAdjust="spacingAndGlyphs"> Top level item</text>
+<text x="18.0" y="79.7" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="34.8" y="79.7" xml:space="preserve" font-size="14" fill="#e5c07b" textLength="8.4" lengthAdjust="spacingAndGlyphs">◦</text>
+<text x="43.2" y="79.7" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Nested item</text>
+<text x="18.0" y="101.4" xml:space="preserve" font-size="14" fill="#e5c07b" textLength="16.8" lengthAdjust="spacingAndGlyphs">1.</text>
+<text x="34.8" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="92.4" lengthAdjust="spacingAndGlyphs"> First step</text>
+<text x="18.0" y="123.1" xml:space="preserve" font-size="14" fill="#e5c07b" textLength="16.8" lengthAdjust="spacingAndGlyphs">2.</text>
+<text x="34.8" y="123.1" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Second step</text>
+<text x="18.0" y="166.5" xml:space="preserve" font-size="14" fill="#56b6c2" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="26.4" y="166.5" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="34.8" y="166.5" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-style:italic" textLength="176.4" lengthAdjust="spacingAndGlyphs">A blockquote spanning</text>
+<text x="18.0" y="188.2" xml:space="preserve" font-size="14" fill="#56b6c2" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="26.4" y="188.2" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="34.8" y="188.2" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-style:italic" textLength="176.4" lengthAdjust="spacingAndGlyphs">the important caveat.</text>
+<text x="18.0" y="231.6" xml:space="preserve" font-size="14" fill="#56b6c2" textLength="537.6" lengthAdjust="spacingAndGlyphs">────────────────────────────────────────────────────────────────</text>
+<text x="18.0" y="275.0" xml:space="preserve" font-size="14" fill="#98c379" opacity="0.6" textLength="100.8" lengthAdjust="spacingAndGlyphs">def hello():</text>
+<text x="18.0" y="296.7" xml:space="preserve" font-size="14" fill="#98c379" opacity="0.6" textLength="126.0" lengthAdjust="spacingAndGlyphs">    print('hi')</text>
+</svg>

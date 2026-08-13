@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="372" height="234" viewBox="0 0 372 234" font-family="DejaVu Sans Mono, monospace">
+<rect x="0" y="0" width="372" height="234" rx="10" fill="#282c34"/>
+<circle cx="22" cy="20" r="6" fill="#e06c75"/>
+<circle cx="42" cy="20" r="6" fill="#e5c07b"/>
+<circle cx="62" cy="20" r="6" fill="#98c379"/>
+<text x="186" y="24" text-anchor="middle" font-size="12" fill="#6b7280">md2p — headers</text>
+<line x1="0" y1="34" x2="372" y2="34" stroke="#1c1f26" stroke-width="1"/>
+<text x="18.0" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="193.2" lengthAdjust="spacingAndGlyphs">                       </text>
+<text x="211.2" y="58.0" xml:space="preserve" font-size="14" fill="#e5c07b" style="font-weight:bold;text-decoration:underline" textLength="142.8" lengthAdjust="spacingAndGlyphs">H1 Centered Title</text>
+<text x="18.0" y="79.7" xml:space="preserve" font-size="14" fill="#56b6c2" style="font-weight:bold" textLength="168.0" lengthAdjust="spacingAndGlyphs">H2 Section With Rule</text>
+<text x="18.0" y="101.4" xml:space="preserve" font-size="14" fill="#56b6c2" textLength="168.0" lengthAdjust="spacingAndGlyphs">────────────────────</text>
+<text x="18.0" y="123.1" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-weight:bold" textLength="109.2" lengthAdjust="spacingAndGlyphs">H3 Subsection</text>
+<text x="18.0" y="144.8" xml:space="preserve" font-size="14" fill="#abb2bf" opacity="0.6" style="font-weight:bold" textLength="134.4" lengthAdjust="spacingAndGlyphs">H4 Minor Heading</text>
+<text x="18.0" y="166.5" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-style:italic" textLength="75.6" lengthAdjust="spacingAndGlyphs">H5 Detail</text>
+<text x="18.0" y="188.2" xml:space="preserve" font-size="14" fill="#abb2bf" opacity="0.6" textLength="109.2" lengthAdjust="spacingAndGlyphs">H6 Fine Print</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="733" height="147" viewBox="0 0 733 147" font-family="DejaVu Sans Mono, monospace">
+<rect x="0" y="0" width="733" height="147" rx="10" fill="#282c34"/>
+<circle cx="22" cy="20" r="6" fill="#e06c75"/>
+<circle cx="42" cy="20" r="6" fill="#e5c07b"/>
+<circle cx="62" cy="20" r="6" fill="#98c379"/>
+<text x="367" y="24" text-anchor="middle" font-size="12" fill="#6b7280">md2p — inline formatting</text>
+<line x1="0" y1="34" x2="733" y2="34" stroke="#1c1f26" stroke-width="1"/>
+<text x="18.0" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="134.4" lengthAdjust="spacingAndGlyphs">Plain text with </text>
+<text x="152.4" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-weight:bold" textLength="33.6" lengthAdjust="spacingAndGlyphs">bold</text>
+<text x="186.0" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="16.8" lengthAdjust="spacingAndGlyphs">, </text>
+<text x="202.8" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-style:italic" textLength="50.4" lengthAdjust="spacingAndGlyphs">italic</text>
+<text x="253.2" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="50.4" lengthAdjust="spacingAndGlyphs">, and </text>
+<text x="303.6" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" style="font-weight:bold;font-style:italic" textLength="92.4" lengthAdjust="spacingAndGlyphs">bold italic</text>
+<text x="396.0" y="58.0" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="8.4" lengthAdjust="spacingAndGlyphs">.</text>
+<text x="18.0" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="42.0" lengthAdjust="spacingAndGlyphs">Also </text>
+<rect x="60.0" y="90.4" width="92.4" height="19.7" fill="#abb2bf"/>
+<text x="60.0" y="101.4" xml:space="preserve" font-size="14" fill="#282c34" textLength="92.4" lengthAdjust="spacingAndGlyphs">inline code</text>
+<text x="152.4" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="33.6" lengthAdjust="spacingAndGlyphs">, a </text>
+<text x="186.0" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" style="text-decoration:underline" textLength="33.6" lengthAdjust="spacingAndGlyphs">link</text>
+<text x="219.6" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="16.8" lengthAdjust="spacingAndGlyphs"> (</text>
+<text x="236.4" y="101.4" xml:space="preserve" font-size="14" fill="#56b6c2" textLength="201.6" lengthAdjust="spacingAndGlyphs">https://example.com/docs</text>
+<text x="438.0" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="134.4" lengthAdjust="spacingAndGlyphs">), and an image </text>
+<text x="572.4" y="101.4" xml:space="preserve" font-size="14" fill="#c678dd" textLength="134.4" lengthAdjust="spacingAndGlyphs">[Image: diagram]</text>
+<text x="706.8" y="101.4" xml:space="preserve" font-size="14" fill="#abb2bf" textLength="8.4" lengthAdjust="spacingAndGlyphs">.</text>
+</svg>
