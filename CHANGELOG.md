@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0] - 2026-08-13
+
+### Added
+- First stable release. Documented every supported Markdown construct
+  with illustrative terminal-mockup screenshots in the README (headers,
+  inline formatting, lists/blockquotes/code blocks, tables, and the
+  non-printable/hidden-watermark highlighting), generated directly from
+  `render_markdown()`'s actual output.
+
 ## [0.2] - 2026-08-13
 
 ### Changed

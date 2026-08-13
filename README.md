@@ -6,7 +6,7 @@ Markdown to Print (md2p)
 
 ## Version
 
-Current version: 0.2
+Current version: 1.0
 
 ## Features
 
