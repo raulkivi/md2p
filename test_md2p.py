@@ -1,10 +1,10 @@
-"""Tests for mtp - Markdown Print."""
+"""Tests for md2p - Markdown to Print."""
 
 import re
 
 import pytest
 
-from mtp import (
+from md2p import (
     BG_RED,
     BOLD, DIM, FG_CYAN, FG_MAGENTA, FG_YELLOW,
     ITALIC, RESET, REVERSE, UNDERLINE,
@@ -71,6 +71,29 @@ class TestReplaceNonprintable:
 
     def test_only_allowed_whitespace_unchanged(self):
         assert _replace_nonprintable('\t\n\r ') == '\t\n\r '
+
+    def test_variation_selector_1_replaced(self):
+        # U+FE00 encodes as 0xEF 0xB8 0x80 in UTF-8; reports isprintable()
+        # True in Python despite being zero-width, so needs an explicit check.
+        assert _replace_nonprintable('︀') == f'{BG_RED}<EF,B8,80>{RESET}'
+
+    def test_variation_selector_16_replaced(self):
+        assert _replace_nonprintable('️') == f'{BG_RED}<EF,B8,8F>{RESET}'
+
+    def test_variation_selector_17_replaced(self):
+        # U+E0100, start of the VS17-256 supplement used for byte-smuggling
+        assert _replace_nonprintable('\U000E0100') == f'{BG_RED}<F3,A0,84,80>{RESET}'
+
+    def test_variation_selector_256_replaced(self):
+        assert _replace_nonprintable('\U000E01EF') == f'{BG_RED}<F3,A0,87,AF>{RESET}'
+
+    def test_variation_selector_hidden_payload_in_text(self):
+        # A visible base character followed by hidden VS-encoded bytes, the
+        # shape actual watermarking/steganography payloads take in the wild.
+        hidden = 'A' + '\U000E0061\U000E0062\U000E0063'
+        result = _replace_nonprintable(hidden)
+        assert result.startswith('A')
+        assert result.count(BG_RED) == 3
 
 
 # ---------------------------------------------------------------------------
@@ -450,10 +473,10 @@ class TestMain:
     """Integration tests for the two supported invocation modes."""
 
     def test_mode_file_argument(self, tmp_path):
-        """mtp example.md  reads the file and prints rendered output."""
+        """md2p example.md  reads the file and prints rendered output."""
         import io
         import sys
-        from mtp import main
+        from md2p import main
 
         md_file = tmp_path / 'sample.md'
         md_file.write_text('# Hello\n\nWorld', encoding='utf-8')
@@ -461,7 +484,7 @@ class TestMain:
         captured = io.StringIO()
         old_argv, old_stdout = sys.argv, sys.stdout
         try:
-            sys.argv = ['mtp', str(md_file)]
+            sys.argv = ['md2p', str(md_file)]
             sys.stdout = captured
             main()
         finally:
@@ -473,10 +496,10 @@ class TestMain:
         assert 'World' in out
 
     def test_mode_stdin_pipe(self, tmp_path):
-        """cat example.md | mtp  reads from stdin and prints rendered output."""
+        """cat example.md | md2p  reads from stdin and prints rendered output."""
         import io
         import sys
-        from mtp import main
+        from md2p import main
 
         captured = io.StringIO()
         fake_stdin = io.StringIO('# Piped\n\nContent')
@@ -484,7 +507,7 @@ class TestMain:
 
         old_argv, old_stdout, old_stdin = sys.argv, sys.stdout, sys.stdin
         try:
-            sys.argv = ['mtp']
+            sys.argv = ['md2p']
             sys.stdout = captured
             sys.stdin = fake_stdin
             main()
@@ -498,17 +521,17 @@ class TestMain:
         assert 'Content' in out
 
     def test_mode_no_args_tty_prints_usage(self, capsys):
-        """Running mtp with no args and no pipe prints a usage message."""
+        """Running md2p with no args and no pipe prints a usage message."""
         import io
         import sys
-        from mtp import main
+        from md2p import main
 
         fake_stdin = io.StringIO('')
         fake_stdin.isatty = lambda: True    # simulate interactive terminal
 
         old_argv, old_stdin = sys.argv, sys.stdin
         try:
-            sys.argv = ['mtp']
+            sys.argv = ['md2p']
             sys.stdin = fake_stdin
             with pytest.raises(SystemExit) as exc_info:
                 main()
@@ -521,13 +544,13 @@ class TestMain:
         assert 'Usage' in err
 
     def test_mode_file_not_found(self, capsys):
-        """mtp missing.md prints an error and exits with code 1."""
+        """md2p missing.md prints an error and exits with code 1."""
         import sys
-        from mtp import main
+        from md2p import main
 
         old_argv = sys.argv
         try:
-            sys.argv = ['mtp', '/nonexistent/path/missing.md']
+            sys.argv = ['md2p', '/nonexistent/path/missing.md']
             with pytest.raises(SystemExit) as exc_info:
                 main()
         finally:
@@ -538,10 +561,10 @@ class TestMain:
         assert 'Error' in err
 
     def test_nroff_flag_produces_overstrike(self, tmp_path):
-        """mtp --nroff file.md emits nroff overstrike, not ANSI escapes."""
+        """md2p --nroff file.md emits nroff overstrike, not ANSI escapes."""
         import io
         import sys
-        from mtp import main
+        from md2p import main
 
         md_file = tmp_path / 'sample.md'
         md_file.write_text('**bold**', encoding='utf-8')
@@ -549,7 +572,7 @@ class TestMain:
         captured = io.StringIO()
         old_argv, old_stdout = sys.argv, sys.stdout
         try:
-            sys.argv = ['mtp', '--nroff', str(md_file)]
+            sys.argv = ['md2p', '--nroff', str(md_file)]
             sys.stdout = captured
             main()
         finally:

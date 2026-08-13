@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""mtp - Markdown Print: formats Markdown files for terminal output using VT220 escape sequences."""
+"""md2p - Markdown to Print: formats Markdown files for terminal output using VT220 escape sequences."""
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 MAX_INPUT_BYTES = 50 * 1024 * 1024  # 50 MB – reject inputs larger than this
 
@@ -52,14 +52,34 @@ def _strip_ansi_escapes(text: str) -> str:
 
 _ALLOWED_NONPRINTABLE = frozenset('\n\r\t ')
 
+# Variation selectors (VS1-16, VS17-256). Unicode category Mn, so Python's
+# str.isprintable() reports them as printable even though they render with
+# zero visible width. This is the block most commonly abused today to
+# smuggle hidden bytes (watermarks, payloads) invisibly onto a base
+# character, so it needs an explicit check rather than relying on
+# isprintable() alone.
+_VARIATION_SELECTOR_RANGES = (
+    (0xFE00, 0xFE0F),
+    (0xE0100, 0xE01EF),
+)
+
+
+def _is_variation_selector(ch: str) -> bool:
+    """Return True if *ch* is a Unicode variation selector."""
+    cp = ord(ch)
+    return any(lo <= cp <= hi for lo, hi in _VARIATION_SELECTOR_RANGES)
+
 
 def _replace_nonprintable(text: str) -> str:
     """Replace non-printable characters (except LF, CR, TAB, space) with
     a red-background hex representation: <HH> for single-byte codepoints,
-    <H0,H1,...> for multi-byte UTF-8 encodings."""
+    <H0,H1,...> for multi-byte UTF-8 encodings. Also flags variation
+    selectors, which are zero-width but pass isprintable()."""
     parts: list[str] = []
     for ch in text:
-        if ch in _ALLOWED_NONPRINTABLE or ch.isprintable():
+        if ch in _ALLOWED_NONPRINTABLE:
+            parts.append(ch)
+        elif ch.isprintable() and not _is_variation_selector(ch):
             parts.append(ch)
         else:
             encoded = ch.encode('utf-8')
@@ -437,7 +457,7 @@ def main():
             rest.append(arg)
 
     if rest:
-        # Mode 2: mtp example.md
+        # Mode 2: md2p example.md
         filename = rest[0]
         if not os.path.exists(filename):
             print(f'{FG_RED}Error:{RESET} File not found: {filename}', file=sys.stderr)
@@ -457,11 +477,11 @@ def main():
             print(f'{FG_RED}Error:{RESET} Cannot read file: {exc}', file=sys.stderr)
             sys.exit(1)
     else:
-        # Mode 1: cat example.md | mtp
+        # Mode 1: cat example.md | md2p
         if sys.stdin.isatty():
             print(
-                f'{BOLD}Usage:{RESET} mtp <file.md>  '
-                f'or  cat <file.md> | mtp',
+                f'{BOLD}Usage:{RESET} md2p <file.md>  '
+                f'or  cat <file.md> | md2p',
                 file=sys.stderr,
             )
             sys.exit(1)
