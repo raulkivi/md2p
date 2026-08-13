@@ -4,6 +4,8 @@ Markdown to Print (md2p)
 
 `md2p` is a small command-line utility for rendering Markdown files to the terminal, using ANSI (or nroff) escape sequences for styling. It is intended as a lightweight helper to preview Markdown content without leaving the terminal.
 
+![md2p rendering a Markdown file in the terminal: headers, bold, italic, inline code, links, lists, and hidden-byte detection](img/demo.gif)
+
 ## Version
 
 Current version: 1.0
