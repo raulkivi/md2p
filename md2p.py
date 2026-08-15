@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """md2p - Markdown to Print: formats Markdown files for terminal output using VT220 escape sequences."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 MAX_INPUT_BYTES = 50 * 1024 * 1024  # 50 MB – reject inputs larger than this
 

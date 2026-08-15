@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-08-16
+
+### Fixed
+- README screenshots (`img/*.{gif,svg}`) used repo-relative paths, which
+  render fine on GitHub but are broken links on the PyPI project page
+  (PyPI has no notion of "relative to the repo"). Rewritten as absolute
+  `raw.githubusercontent.com` URLs pinned to this release tag.
+
 ## [1.0.1] - 2026-08-16
 
 ### Added

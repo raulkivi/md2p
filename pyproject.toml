@@ -1,6 +1,6 @@
 [project]
 name = "md2p"
-version = "1.0.1"
+version = "1.0.2"
 description = "Markdown to Print: renders Markdown files to the terminal with ANSI or nroff styling"
 authors = [
     { name = "Raul Kivi", email = "raulkivi@users.noreply.github.com" },

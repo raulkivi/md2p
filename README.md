@@ -4,11 +4,11 @@ Markdown to Print (md2p)
 
 `md2p` is a small command-line utility for rendering Markdown files to the terminal, using ANSI (or nroff) escape sequences for styling. It is intended as a lightweight helper to preview Markdown content without leaving the terminal.
 
-![md2p rendering a Markdown file in the terminal: headers, bold, italic, inline code, links, lists, and hidden-byte detection](img/demo.gif)
+![md2p rendering a Markdown file in the terminal: headers, bold, italic, inline code, links, lists, and hidden-byte detection](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/demo.gif)
 
 ## Version
 
-Current version: 1.0.1
+Current version: 1.0.2
 
 ## Features
 
@@ -128,7 +128,7 @@ Each ATX header level (`#` through `######`) gets distinct styling — H1 is cen
 
 **Terminal output:**
 
-![Headers rendered by md2p, showing each of the six distinct heading styles](img/headers.svg)
+![Headers rendered by md2p, showing each of the six distinct heading styles](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/headers.svg)
 
 ### Example: Inline Formatting
 
@@ -144,7 +144,7 @@ Also `inline code`, a [link](https://example.com/docs), and an image ![diagram](
 
 **Terminal output:**
 
-![Inline formatting rendered by md2p: bold, italic, bold italic, inline code, a link, and an image placeholder](img/inline-formatting.svg)
+![Inline formatting rendered by md2p: bold, italic, bold italic, inline code, a link, and an image placeholder](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/inline-formatting.svg)
 
 ### Example: Lists, Blockquotes & Code Blocks
 
@@ -169,7 +169,7 @@ def hello():
 
 **Terminal output:**
 
-![Nested lists, a blockquote, a horizontal rule, and a fenced code block rendered by md2p](img/lists-and-blocks.svg)
+![Nested lists, a blockquote, a horizontal rule, and a fenced code block rendered by md2p](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/lists-and-blocks.svg)
 
 ### Example: Markdown Table
 
@@ -186,7 +186,7 @@ Tables are rendered as bordered ASCII grids with aligned columns.
 
 **Terminal output:**
 
-![A three-column Markdown table rendered by md2p as a bordered ASCII grid](img/table.svg)
+![A three-column Markdown table rendered by md2p as a bordered ASCII grid](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/table.svg)
 
 ### Example: Non-printable Characters & Hidden Watermarks
 
@@ -200,7 +200,7 @@ This line has a bell \x07 and a null \x00 byte inside.
 
 **Terminal output:**
 
-![A bell and a null byte highlighted with red-background hex markers by md2p](img/nonprintable.svg)
+![A bell and a null byte highlighted with red-background hex markers by md2p](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.2/img/nonprintable.svg)
 
 The surrounding text is printed normally; only the offending bytes are highlighted, making it easy to spot encoding errors or accidental binary content in Markdown source files.
 
