@@ -35,6 +35,14 @@ source .venv/bin/activate
 
 There are no external dependencies required by default. 
 
+### From PyPI
+
+```bash
+pip install md2p
+# or, without installing into an environment:
+uvx md2p README.md
+```
+
 Linux (user install)
 
 To install `md2p` for your user on Linux, use the included `install.sh` to copy the script to `~/.local/bin` (or your `XDG_BIN_HOME`):

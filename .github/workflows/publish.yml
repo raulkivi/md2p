@@ -1,0 +1,40 @@
+# publish.yml — PyPI Trusted Publishing workflow
+#
+# ONE-TIME SETUP (on PyPI):
+#   1. Create an account at https://pypi.org and log in.
+#   2. Go to https://pypi.org/manage/account/publishing/
+#   3. Click "Add a new publisher" and fill in:
+#      - PyPI project name:  md2p
+#      - GitHub owner:       raulkivi
+#      - Repository name:    md2p
+#      - Workflow filename:  publish.yml
+#      - Environment name:   pypi
+#
+#   Full guide: https://docs.pypi.org/trusted-publishers/
+#
+# PUBLISHING A RELEASE:
+#   Bump `version` in pyproject.toml, then push a matching tag:
+#     git tag v1.0 && git push origin v1.0
+
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: Publish md2p
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build
+        run: uv build
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1

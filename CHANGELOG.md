@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- PyPI packaging (`pyproject.toml`, hatchling build) and a Trusted
+  Publishing GitHub Actions workflow (`.github/workflows/publish.yml`),
+  triggered by pushing a `vX.Y` tag. Once published, `md2p` will be
+  installable with `pip install md2p` / `uvx md2p` in addition to the
+  existing `install.sh` method.
+
 ## [1.0] - 2026-08-13
 
 ### Added

@@ -1,0 +1,45 @@
+[project]
+name = "md2p"
+version = "1.0"
+description = "Markdown to Print: renders Markdown files to the terminal with ANSI or nroff styling"
+authors = [
+    { name = "Raul Kivi", email = "raulkivi@users.noreply.github.com" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = ["markdown", "terminal", "ansi", "nroff", "cli", "pager"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Terminals",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+md2p = "md2p:main"
+
+[project.urls]
+Homepage = "https://github.com/raulkivi/md2p"
+Repository = "https://github.com/raulkivi/md2p"
+"Bug Tracker" = "https://github.com/raulkivi/md2p/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = ["md2p.py"]
