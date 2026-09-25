@@ -23,6 +23,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish md2p
@@ -32,9 +35,13 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false  # a poisoned cache must not reach a published release
       - name: Build
         run: uv build
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2

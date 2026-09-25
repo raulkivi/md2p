@@ -75,10 +75,10 @@ class TestReplaceNonprintable:
     def test_variation_selector_1_replaced(self):
         # U+FE00 encodes as 0xEF 0xB8 0x80 in UTF-8; reports isprintable()
         # True in Python despite being zero-width, so needs an explicit check.
-        assert _replace_nonprintable('︀') == f'{BG_RED}<EF,B8,80>{RESET}'
+        assert _replace_nonprintable('\ufe00') == f'{BG_RED}<EF,B8,80>{RESET}'
 
     def test_variation_selector_16_replaced(self):
-        assert _replace_nonprintable('️') == f'{BG_RED}<EF,B8,8F>{RESET}'
+        assert _replace_nonprintable('\ufe0f') == f'{BG_RED}<EF,B8,8F>{RESET}'
 
     def test_variation_selector_17_replaced(self):
         # U+E0100, start of the VS17-256 supplement used for byte-smuggling

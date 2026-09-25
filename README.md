@@ -1,5 +1,9 @@
 # md2p
 
+[![CI](https://github.com/raulkivi/md2p/actions/workflows/ci.yml/badge.svg)](https://github.com/raulkivi/md2p/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/raulkivi/md2p/badge)](https://scorecard.dev/viewer/?uri=github.com/raulkivi/md2p)
+[![PyPI](https://img.shields.io/pypi/v/md2p)](https://pypi.org/project/md2p/)
+
 Markdown to Print (md2p)
 
 `md2p` is a small command-line utility for rendering Markdown files to the terminal, using ANSI (or nroff) escape sequences for styling. It is intended as a lightweight helper to preview Markdown content without leaving the terminal.
