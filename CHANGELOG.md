@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   to the terminal. Control characters in the filename are now replaced
   with the same visible hex markers used for document content.
 
+### Security
+- OSC, DCS, SOS, PM and APC terminal sequences are removed with their payload; before, the payload stayed as visible text.
+
 ## [1.0.2] - 2026-08-16
 
 ### Fixed

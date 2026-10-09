@@ -42,7 +42,11 @@ def get_terminal_width():
 # Input sanitisation
 # ---------------------------------------------------------------------------
 
-_ANSI_ESCAPE_RE = re.compile(r'\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+# String-type sequences (OSC, DCS, SOS, PM, APC) run until BEL or ST, so strip them
+# whole; otherwise their payload would be left behind as visible text.
+_ANSI_ESCAPE_RE = re.compile(
+    r'\x1b(?:[\]PX^_][^\x07\x1b]*(?:\x07|\x1b\\)?|[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])'
+)
 
 
 def _strip_ansi_escapes(text: str) -> str:
@@ -54,6 +58,12 @@ def _strip_ansi_escapes(text: str) -> str:
 # column 0, letting later input overwrite text already on screen. CRLF line
 # endings are normalised to LF first, so only lone CRs get flagged.
 _ALLOWED_NONPRINTABLE = frozenset('\n\t ')
+
+
+def _normalize_newlines(text: str) -> str:
+    """CRLF becomes LF; a lone CR stays so it is flagged, since it can overwrite a line."""
+    return text.replace('\r\n', '\n')
+
 
 # Variation selectors (VS1-16, VS17-256). Unicode category Mn, so Python's
 # str.isprintable() reports them as printable even though they render with
@@ -480,7 +490,7 @@ def main():
                     file=sys.stderr,
                 )
                 sys.exit(1)
-            content = _strip_ansi_escapes(content)
+            content = _normalize_newlines(_strip_ansi_escapes(content))
         except (IOError, UnicodeDecodeError) as exc:
             print(f'{FG_RED}Error:{RESET} Cannot read file: {exc}', file=sys.stderr)
             sys.exit(1)
@@ -502,7 +512,7 @@ def main():
                     file=sys.stderr,
                 )
                 sys.exit(1)
-            content = _strip_ansi_escapes(content)
+            content = _normalize_newlines(_strip_ansi_escapes(content))
         except (IOError, UnicodeDecodeError) as exc:
             print(f'{FG_RED}Error:{RESET} Cannot read stdin: {exc}', file=sys.stderr)
             sys.exit(1)

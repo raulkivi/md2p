@@ -722,3 +722,26 @@ class TestAnsiToNroff:
 
     def test_no_residual_escape_chars(self):
         assert '\033' not in ansi_to_nroff(f'{FG_YELLOW}{BOLD}Title{RESET}')
+
+
+class TestHostileTerminalInput:
+    def test_osc_title_sequence_is_removed_with_payload(self):
+        from md2p import _strip_ansi_escapes
+        assert _strip_ansi_escapes('a\x1b]0;owned\x07b') == 'ab'
+
+    def test_osc_hyperlink_with_st_terminator_is_removed(self):
+        from md2p import _strip_ansi_escapes
+        assert _strip_ansi_escapes('a\x1b]8;;http://x\x1b\\link\x1b]8;;\x1b\\b') == 'alinkb'
+
+    def test_dcs_string_is_removed(self):
+        from md2p import _strip_ansi_escapes
+        assert _strip_ansi_escapes('a\x1bPpayload\x1b\\b') == 'ab'
+
+    def test_lone_carriage_return_is_flagged_not_passed_through(self):
+        from md2p import _normalize_newlines, _replace_nonprintable
+        out = _replace_nonprintable(_normalize_newlines('safe\rrm -rf'))
+        assert '\r' not in out and '<0D>' in out
+
+    def test_crlf_is_treated_as_newline(self):
+        from md2p import _normalize_newlines
+        assert _normalize_newlines('a\r\nb') == 'a\nb'
