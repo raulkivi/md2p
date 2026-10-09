@@ -50,7 +50,10 @@ def _strip_ansi_escapes(text: str) -> str:
     return _ANSI_ESCAPE_RE.sub('', text)
 
 
-_ALLOWED_NONPRINTABLE = frozenset('\n\r\t ')
+# CR is deliberately absent: a bare carriage return moves the cursor back to
+# column 0, letting later input overwrite text already on screen. CRLF line
+# endings are normalised to LF first, so only lone CRs get flagged.
+_ALLOWED_NONPRINTABLE = frozenset('\n\t ')
 
 # Variation selectors (VS1-16, VS17-256). Unicode category Mn, so Python's
 # str.isprintable() reports them as printable even though they render with
@@ -71,10 +74,12 @@ def _is_variation_selector(ch: str) -> bool:
 
 
 def _replace_nonprintable(text: str) -> str:
-    """Replace non-printable characters (except LF, CR, TAB, space) with
+    """Replace non-printable characters (except LF, TAB, space) with
     a red-background hex representation: <HH> for single-byte codepoints,
     <H0,H1,...> for multi-byte UTF-8 encodings. Also flags variation
-    selectors, which are zero-width but pass isprintable()."""
+    selectors, which are zero-width but pass isprintable(). CRLF line
+    endings are normalised to LF first; any remaining lone CR is flagged."""
+    text = text.replace('\r\n', '\n')
     parts: list[str] = []
     for ch in text:
         if ch in _ALLOWED_NONPRINTABLE:

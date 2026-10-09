@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- A lone carriage return (`\r`) in the input was passed through to the
+  terminal unescaped, so piped input such as `printf 'safe\rEVIL'` could
+  return the cursor to column 0 and overwrite already-displayed text
+  (file input was only accidentally protected by Python's universal
+  newlines). `CRLF` line endings are now normalised to `LF`, and any
+  remaining lone `\r` is flagged with the red-background `<0D>` marker
+  like other control characters — including inside code blocks, tables
+  and inline code.
+
 ## [1.0.2] - 2026-08-16
 
 ### Fixed
