@@ -465,7 +465,10 @@ def main():
         # Mode 2: md2p example.md
         filename = rest[0]
         if not os.path.exists(filename):
-            print(f'{FG_RED}Error:{RESET} File not found: {filename}', file=sys.stderr)
+            # The filename is untrusted too: escape control characters so a
+            # name like $'\e]0;pwned\a' can't inject escape sequences.
+            print(f'{FG_RED}Error:{RESET} File not found:'
+                  f' {_replace_nonprintable(filename)}', file=sys.stderr)
             sys.exit(1)
         try:
             with open(filename, encoding='utf-8') as fh:

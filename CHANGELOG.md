@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   remaining lone `\r` is flagged with the red-background `<0D>` marker
   like other control characters — including inside code blocks, tables
   and inline code.
+- The "File not found" error echoed the filename argument to stderr
+  unescaped, so `md2p $'\e]0;pwned\a'` emitted a raw OSC escape sequence
+  to the terminal. Control characters in the filename are now replaced
+  with the same visible hex markers used for document content.
 
 ## [1.0.2] - 2026-08-16
 

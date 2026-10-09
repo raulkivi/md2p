@@ -614,6 +614,46 @@ class TestMain:
         err = capsys.readouterr().err
         assert 'Error' in err
 
+    def test_file_not_found_sanitises_filename(self, capsys):
+        """md2p $'\\e]0;pwned\\a' must not echo a raw OSC sequence to stderr."""
+        import sys
+        from md2p import main
+
+        old_argv = sys.argv
+        try:
+            sys.argv = ['md2p', '\x1b]0;pwned\x07']
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        finally:
+            sys.argv = old_argv
+
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert '\x1b]' not in err
+        assert '\x07' not in err
+        assert f'{BG_RED}<1B>{RESET}]0;pwned{BG_RED}<07>{RESET}' in err
+
+    def test_read_error_does_not_echo_raw_filename(self, tmp_path, capsys):
+        """An unreadable path with control chars in its name stays escaped."""
+        import sys
+        from md2p import main
+
+        bad_dir = tmp_path / 'x\x1b]0;pwned\x07'
+        bad_dir.mkdir()          # exists, but reading a directory fails
+        old_argv = sys.argv
+        try:
+            sys.argv = ['md2p', str(bad_dir)]
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        finally:
+            sys.argv = old_argv
+
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert 'Cannot read file' in err
+        assert '\x1b]' not in err
+        assert '\x07' not in err
+
     def test_nroff_flag_produces_overstrike(self, tmp_path):
         """md2p --nroff file.md emits nroff overstrike, not ANSI escapes."""
         import io
