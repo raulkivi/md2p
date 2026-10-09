@@ -32,8 +32,17 @@ class TestReplaceNonprintable:
     def test_lf_allowed(self):
         assert _replace_nonprintable('line1\nline2') == 'line1\nline2'
 
-    def test_cr_allowed(self):
-        assert _replace_nonprintable('line\r\n') == 'line\r\n'
+    def test_crlf_normalised_to_lf(self):
+        # Windows line endings render the same as Unix ones.
+        assert _replace_nonprintable('line1\r\nline2\r\n') == 'line1\nline2\n'
+
+    def test_lone_cr_replaced(self):
+        # A bare CR returns the cursor to column 0, letting later text
+        # overwrite what was already displayed, so it must be flagged.
+        assert _replace_nonprintable('safe\rEVIL') == f'safe{BG_RED}<0D>{RESET}EVIL'
+
+    def test_cr_before_crlf_replaced(self):
+        assert _replace_nonprintable('a\r\r\nb') == f'a{BG_RED}<0D>{RESET}\nb'
 
     def test_tab_allowed(self):
         assert _replace_nonprintable('col1\tcol2') == 'col1\tcol2'
@@ -70,7 +79,7 @@ class TestReplaceNonprintable:
         assert _replace_nonprintable('\x01\x02') == f'{BG_RED}<01>{RESET}{BG_RED}<02>{RESET}'
 
     def test_only_allowed_whitespace_unchanged(self):
-        assert _replace_nonprintable('\t\n\r ') == '\t\n\r '
+        assert _replace_nonprintable('\t\n ') == '\t\n '
 
     def test_variation_selector_1_replaced(self):
         # U+FE00 encodes as 0xEF 0xB8 0x80 in UTF-8; reports isprintable()
@@ -469,8 +478,53 @@ class TestRenderMarkdown:
 # main() – CLI entry point (both usage modes)
 # ---------------------------------------------------------------------------
 
+def _run_main_stdin(text, argv=()):
+    """Run main() with *text* piped on stdin and return captured stdout."""
+    import io
+    import sys
+    from md2p import main
+
+    captured = io.StringIO()
+    fake_stdin = io.StringIO(text, newline='')   # no newline translation
+    fake_stdin.isatty = lambda: False
+
+    old_argv, old_stdout, old_stdin = sys.argv, sys.stdout, sys.stdin
+    try:
+        sys.argv = ['md2p', *argv]
+        sys.stdout = captured
+        sys.stdin = fake_stdin
+        main()
+    finally:
+        sys.argv = old_argv
+        sys.stdout = old_stdout
+        sys.stdin = old_stdin
+    return captured.getvalue()
+
+
 class TestMain:
     """Integration tests for the two supported invocation modes."""
+
+    def test_stdin_lone_cr_neutralised(self):
+        """printf 'safe\\rEVIL' | md2p must not emit a raw carriage return."""
+        out = _run_main_stdin('safe\rEVIL\n')
+        assert '\r' not in out
+        assert f'safe{BG_RED}<0D>{RESET}EVIL' in out
+
+    @pytest.mark.parametrize('md', [
+        '```\nsafe\rEVIL\n```\n',          # fenced code block
+        '| a | b |\n|---|---|\n| safe\rEVIL | x |\n',  # table cell
+        'text `safe\rEVIL` more\n',          # inline code
+    ], ids=['code-block', 'table', 'inline-code'])
+    def test_stdin_lone_cr_neutralised_in_blocks(self, md):
+        out = _run_main_stdin(md)
+        assert '\r' not in out
+        assert '<0D>' in out
+
+    def test_stdin_crlf_renders_like_lf(self):
+        md = ('# Title\n\nSome **bold** text.\n\n'
+              '| a | b |\n|---|---|\n| 1 | 2 |\n\n'
+              '```\ncode\n```\n- item\n')
+        assert _run_main_stdin(md.replace('\n', '\r\n')) == _run_main_stdin(md)
 
     def test_mode_file_argument(self, tmp_path):
         """md2p example.md  reads the file and prints rendered output."""
@@ -559,6 +613,46 @@ class TestMain:
         assert exc_info.value.code == 1
         err = capsys.readouterr().err
         assert 'Error' in err
+
+    def test_file_not_found_sanitises_filename(self, capsys):
+        """md2p $'\\e]0;pwned\\a' must not echo a raw OSC sequence to stderr."""
+        import sys
+        from md2p import main
+
+        old_argv = sys.argv
+        try:
+            sys.argv = ['md2p', '\x1b]0;pwned\x07']
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        finally:
+            sys.argv = old_argv
+
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert '\x1b]' not in err
+        assert '\x07' not in err
+        assert f'{BG_RED}<1B>{RESET}]0;pwned{BG_RED}<07>{RESET}' in err
+
+    def test_read_error_does_not_echo_raw_filename(self, tmp_path, capsys):
+        """An unreadable path with control chars in its name stays escaped."""
+        import sys
+        from md2p import main
+
+        bad_dir = tmp_path / 'x\x1b]0;pwned\x07'
+        bad_dir.mkdir()          # exists, but reading a directory fails
+        old_argv = sys.argv
+        try:
+            sys.argv = ['md2p', str(bad_dir)]
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        finally:
+            sys.argv = old_argv
+
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert 'Cannot read file' in err
+        assert '\x1b]' not in err
+        assert '\x07' not in err
 
     def test_nroff_flag_produces_overstrike(self, tmp_path):
         """md2p --nroff file.md emits nroff overstrike, not ANSI escapes."""

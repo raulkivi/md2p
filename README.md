@@ -194,7 +194,7 @@ Tables are rendered as bordered ASCII grids with aligned columns.
 
 ### Example: Non-printable Characters & Hidden Watermarks
 
-Non-printable characters (anything that is not a printable Unicode character, newline, carriage return, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible. Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`.
+Non-printable characters (anything that is not a printable Unicode character, newline, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible. Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`. Windows `CRLF` line endings are normalised to `LF`; a lone carriage return (which would let input overwrite text already on screen) is flagged as `<0D>`.
 
 **Source Markdown** (paragraph contains a raw `BEL` U+0007 and a `NULL` U+0000):
 
