@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-12
+
 ### Added
 - CI now runs the test suite on Python 3.10-3.14 and macOS. Automated
   CodeQL and Scorecard analysis, Dependabot updates, and a hidden-Unicode
