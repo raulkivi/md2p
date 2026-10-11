@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- CI now runs the test suite on Python 3.10-3.14 and macOS. Automated
+  CodeQL and Scorecard analysis, Dependabot updates, and a hidden-Unicode
+  scan are also enabled.
+- Added a security policy with instructions for privately reporting
+  vulnerabilities.
+
 ### Fixed
 - A lone carriage return (`\r`) in the input was passed through to the
   terminal unescaped, so piped input such as `printf 'safe\rEVIL'` could
