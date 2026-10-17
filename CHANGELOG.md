@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- The link regex matched the `[` inside the red hidden-character warning marker
+  (e.g. `x<hidden>](url)`), corrupting the marker and emitting a stray raw
+  escape byte. Markers are now protected from inline formatting.
+
 ## [1.0.3] - 2026-10-12
 
 ### Added

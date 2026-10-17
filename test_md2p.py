@@ -745,3 +745,33 @@ class TestHostileTerminalInput:
     def test_crlf_is_treated_as_newline(self):
         from md2p import _normalize_newlines
         assert _normalize_newlines('a\r\nb') == 'a\nb'
+
+
+# ---------------------------------------------------------------------------
+# Warning markers must survive inline formatting
+# ---------------------------------------------------------------------------
+
+class TestWarningMarkerSurvivesInlineFormatting:
+    MARKER = f'{BG_RED}<E2,80,8B>{RESET}'
+
+    def test_marker_before_link_syntax_stays_intact(self):
+        # The marker's own "ESC[" must not be matched as the "[" of a link.
+        out = render_markdown(_replace_nonprintable('a​](http://x.io)'))
+        assert self.MARKER in out
+        assert out.count('\x1b') == out.count('\x1b[')
+
+    def test_marker_in_link_text_stays_intact(self):
+        out = render_markdown(_replace_nonprintable('[t​](http://x.io)'))
+        assert self.MARKER in out
+
+    def test_marker_in_link_url_stays_intact(self):
+        out = render_markdown(_replace_nonprintable('[t](http://x​.io)'))
+        assert self.MARKER in out
+
+    def test_marker_in_image_alt_and_code_stays_intact(self):
+        assert self.MARKER in render_markdown(_replace_nonprintable('![a​](u)'))
+        assert self.MARKER in render_markdown(_replace_nonprintable('`a​`'))
+
+    def test_no_stray_escape_from_marker(self):
+        out = render_markdown(_replace_nonprintable('x​](u)'))
+        assert not re.search(r'\x1b(?!\[)', out)

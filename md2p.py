@@ -83,6 +83,11 @@ def _is_variation_selector(ch: str) -> bool:
     return any(lo <= cp <= hi for lo, hi in _VARIATION_SELECTOR_RANGES)
 
 
+_WARNING_MARKER_RE = re.compile(
+    re.escape(BG_RED) + r'<[0-9A-F]{2}(?:,[0-9A-F]{2})*>' + re.escape(RESET)
+)
+
+
 def _replace_nonprintable(text: str) -> str:
     """Replace non-printable characters (except LF, TAB, space) with
     a red-background hex representation: <HH> for single-byte codepoints,
@@ -121,6 +126,12 @@ def format_inline(text):
         placeholder = f'\x02SPAN_{len(spans)}_\x03'
         spans.append(rendered)
         return placeholder
+
+    # Warning markers inserted by _replace_nonprintable contain "ESC[", whose
+    # "[" the link regex would otherwise match, corrupting the marker and
+    # leaving a stray ESC. Raw ESC and the \x02/\x03 placeholder delimiters are
+    # flagged before this point, so only genuine markers can match here.
+    text = _WARNING_MARKER_RE.sub(lambda m: _stash(m.group(0)), text)
 
     # Inline code  `code`
     text = re.sub(r'`([^`]+)`',
@@ -163,7 +174,9 @@ def format_inline(text):
                   text)
 
     # Step 3: Restore protected spans
-    for idx, span in enumerate(spans):
+    # Reverse order: later spans may embed placeholders of earlier ones.
+    for idx in reversed(range(len(spans))):
+        span = spans[idx]
         text = text.replace(f'\x02SPAN_{idx}_\x03', span)
 
     return text
