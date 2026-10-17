@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- The PyPI classifier is now "Development Status :: 4 - Beta" instead of "5 - Production/Stable".
+
 ### Fixed
 - The link regex matched the `[` inside the red hidden-character warning marker
   (e.g. `x<hidden>](url)`), corrupting the marker and emitting a stray raw
