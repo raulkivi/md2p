@@ -9,7 +9,7 @@ license = { text = "MIT" }
 readme = "README.md"
 keywords = ["markdown", "terminal", "ansi", "nroff", "cli", "pager"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
