@@ -756,22 +756,22 @@ class TestWarningMarkerSurvivesInlineFormatting:
 
     def test_marker_before_link_syntax_stays_intact(self):
         # The marker's own "ESC[" must not be matched as the "[" of a link.
-        out = render_markdown(_replace_nonprintable('a​](http://x.io)'))
+        out = render_markdown(_replace_nonprintable('a\u200b](http://x.io)'))
         assert self.MARKER in out
         assert out.count('\x1b') == out.count('\x1b[')
 
     def test_marker_in_link_text_stays_intact(self):
-        out = render_markdown(_replace_nonprintable('[t​](http://x.io)'))
+        out = render_markdown(_replace_nonprintable('[t\u200b](http://x.io)'))
         assert self.MARKER in out
 
     def test_marker_in_link_url_stays_intact(self):
-        out = render_markdown(_replace_nonprintable('[t](http://x​.io)'))
+        out = render_markdown(_replace_nonprintable('[t](http://x\u200b.io)'))
         assert self.MARKER in out
 
     def test_marker_in_image_alt_and_code_stays_intact(self):
-        assert self.MARKER in render_markdown(_replace_nonprintable('![a​](u)'))
-        assert self.MARKER in render_markdown(_replace_nonprintable('`a​`'))
+        assert self.MARKER in render_markdown(_replace_nonprintable('![a\u200b](u)'))
+        assert self.MARKER in render_markdown(_replace_nonprintable('`a\u200b`'))
 
     def test_no_stray_escape_from_marker(self):
-        out = render_markdown(_replace_nonprintable('x​](u)'))
+        out = render_markdown(_replace_nonprintable('x\u200b](u)'))
         assert not re.search(r'\x1b(?!\[)', out)
