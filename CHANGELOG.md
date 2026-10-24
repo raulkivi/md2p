@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-24
+
 ### Changed
 - The PyPI classifier is now "Development Status :: 4 - Beta" instead of "5 - Production/Stable".
 
