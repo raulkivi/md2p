@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-11-11
+
+### Changed
+- Development and CI dependencies were updated: GitHub Actions in the workflows
+  (including the PyPI publish workflow) and `pytest` 9.2.0. No runtime code changed.
+
 ## [1.0.4] - 2026-10-24
 
 ### Changed
