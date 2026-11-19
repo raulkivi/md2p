@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """md2p - Markdown to Print: formats Markdown files for terminal output using VT220 escape sequences."""
 
-__version__ = "1.0.5"
+__version__ = "1.1.0"
 
 MAX_INPUT_BYTES = 50 * 1024 * 1024  # 50 MB – reject inputs larger than this
 
@@ -324,7 +324,8 @@ def render_markdown(content):
             while i < len(lines) and not re.match(r'^```|^~~~', lines[i]):
                 code_lines.append(lines[i])
                 i += 1
-            output.append(f'{DIM}{FG_GREEN}' + '\n'.join(code_lines) + RESET)
+            # Style each line on its own: less -R resets attributes at every line.
+            output.append('\n'.join(f'{DIM}{FG_GREEN}{code}{RESET}' for code in code_lines))
             i += 1        # skip closing fence
             continue
 
@@ -471,12 +472,30 @@ def ansi_to_nroff(text: str) -> str:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+USAGE = 'md2p [options] <file.md>  or  cat <file.md> | md2p'
+
+HELP = f"""\
+Usage: {USAGE}
+
+Render Markdown to the terminal with ANSI styling.
+
+Options:
+  -h, --help     show this help and exit
+  -v, --version  print the version and exit
+  -n, --nroff    emit nroff overstrike sequences instead of ANSI escapes
+                 (for viewers such as Midnight Commander's internal viewer)
+"""
+
+
 def main():
     # Parse flags, leaving positional arguments (the filename) in *rest*.
     nroff = False
     rest: list[str] = []
     for arg in sys.argv[1:]:
-        if arg in ("-v", "--version"):
+        if arg in ("-h", "--help"):
+            print(HELP, end='')
+            sys.exit(0)
+        elif arg in ("-v", "--version"):
             print(__version__)
             sys.exit(0)
         elif arg in ("-n", "--nroff"):
@@ -494,7 +513,8 @@ def main():
                   f' {_replace_nonprintable(filename)}', file=sys.stderr)
             sys.exit(1)
         try:
-            with open(filename, encoding='utf-8') as fh:
+            # newline='' keeps a lone CR, so it is flagged instead of read as a line break.
+            with open(filename, encoding='utf-8', newline='') as fh:
                 content = fh.read(MAX_INPUT_BYTES + 1)
             if len(content) > MAX_INPUT_BYTES:
                 print(
@@ -510,11 +530,7 @@ def main():
     else:
         # Mode 1: cat example.md | md2p
         if sys.stdin.isatty():
-            print(
-                f'{BOLD}Usage:{RESET} md2p <file.md>  '
-                f'or  cat <file.md> | md2p',
-                file=sys.stderr,
-            )
+            print(f'{BOLD}Usage:{RESET} {USAGE}', file=sys.stderr)
             sys.exit(1)
         try:
             content = sys.stdin.read(MAX_INPUT_BYTES + 1)
