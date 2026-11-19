@@ -4,67 +4,56 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/raulkivi/md2p/badge)](https://scorecard.dev/viewer/?uri=github.com/raulkivi/md2p)
 [![PyPI](https://img.shields.io/pypi/v/md2p)](https://pypi.org/project/md2p/)
 
-Markdown to Print (md2p)
+Last changed: 2026-11-19 · Source: <https://github.com/raulkivi/md2p>
 
-`md2p` is a small command-line utility for rendering Markdown files to the terminal, using ANSI (or nroff) escape sequences for styling. It is intended as a lightweight helper to preview Markdown content without leaving the terminal.
+`md2p` (Markdown to Print) renders Markdown in the terminal with ANSI styling, so you can read a Markdown file without leaving the shell.
 
-![md2p rendering a Markdown file in the terminal: headers, bold, italic, inline code, links, lists, and hidden-byte detection](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/demo.gif)
+![A terminal runs md2p showcase.md and prints the file styled: a centered title, bold, italic and inline code, nested lists, a blockquote and a table](https://raw.githubusercontent.com/raulkivi/md2p/main/img/quick-start.gif)
 
-## Version
+## Quick start
 
-Current version: 1.0.5
+```bash
+uvx md2p README.md                    # run without installing
+pip install md2p && md2p README.md    # or install it
+```
 
 ## Features
 
-- Renders to stdout with ANSI colour/style escapes, or nroff overstrike sequences via `--nroff`
-- Simple CLI usage with a Markdown file path, or via stdin
-- Supported Markdown elements:
+- Renders a file or stdin to stdout with ANSI color, or with nroff overstrike sequences (`--nroff`)
+- Supported Markdown:
   - ATX headers `#`–`######` (each level styled distinctly) and setext headers (`===`/`---`)
   - Horizontal rules, blockquotes, fenced code blocks (` ``` `/`~~~`)
-  - Ordered and unordered lists, including nested indentation
+  - Ordered and unordered lists, including nested lists
   - Tables, rendered as bordered ASCII grids
-  - Inline formatting: bold, italic, bold+italic, inline code, links, images
-- Non-printable bytes and hidden Unicode variation selectors (a common vector for invisible watermarks/payloads) are never passed through silently — each is replaced with a visible hex marker (see example below)
-- Input is capped at 50 MB and raw ANSI escapes in the source file are stripped before rendering, so a malicious Markdown file can't inject terminal escape sequences
+  - Bold, italic, bold+italic, inline code, links, images
+- Shows hidden characters: non-printable bytes and Unicode variation selectors (used to hide watermarks or payloads in text) appear as visible hex markers
+- Strips raw ANSI escapes from the input, so a malicious Markdown file can't send escape sequences to your terminal
 
 ## Installation
 
-1. Ensure you have Python 3.8+ installed.
-2. (Optional) Create and activate a virtual environment:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-There are no external dependencies required by default. 
+Requires Python 3.8+. There are no runtime dependencies.
 
 ### From PyPI
 
 ```bash
 pip install md2p
-# or, without installing into an environment:
-uvx md2p README.md
 ```
 
-Linux (user install)
+Or run it without installing: `uvx md2p README.md`.
 
-To install `md2p` for your user on Linux, use the included `install.sh` to copy the script to `~/.local/bin` (or your `XDG_BIN_HOME`):
+### From a Git clone
+
+`install.sh` copies `md2p.py` to `~/.local/bin/md2p` (or `$XDG_BIN_HOME/md2p`):
 
 ```bash
-chmod +x install.sh
-./install.sh
-# or specify destination explicitly
-./install.sh --dest "$HOME/.local/bin"
+git clone https://github.com/raulkivi/md2p.git
+cd md2p
+./install.sh                          # or: ./install.sh --dest "$HOME/bin"
 ```
 
-Uninstall with:
+`./install.sh --uninstall` removes it from the default location.
 
-```bash
-./install.sh --uninstall
-```
-
-Ensure your user bin directory is in `PATH`, for example add to your shell profile:
+Make sure the install directory is on your `PATH`, for example in your shell profile:
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -72,54 +61,59 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## Usage
 
-Run the script with a Markdown file path:
-
 ```bash
-python3 md2p.py path/to/file.md
+md2p path/to/file.md           # render a file
+cat path/to/file.md | md2p     # render stdin
+md2p path/to/file.md | less -R # page through a long file
 ```
 
-This prints the processed Markdown to stdout. Redirect output to a file if desired:
+![cat README.md piped through md2p into less -R: paging down through the rendered README, then searching for Options](https://raw.githubusercontent.com/raulkivi/md2p/main/img/pager.gif)
 
-```bash
-python3 md2p.py README.md > out.txt
-```
-
-You can also pipe Markdown in on stdin:
-
-```bash
-cat README.md | md2p
-```
+- Output width follows the terminal width (H1 headers are centered, rules span the width).
+- Output always contains ANSI escapes, even when redirected: `md2p file.md > out.txt` saves escape codes, not plain text.
+- Exit status is 0 on success and 1 when the input is missing, unreadable, not UTF-8, or larger than 50 MB.
 
 ### Options
 
+- `-h`, `--help` — show usage and exit.
 - `-v`, `--version` — print the version and exit.
 - `-n`, `--nroff` — emit nroff overstrike sequences (`X⌫X` for bold, `_⌫X` for
-  underline) instead of ANSI colour escapes. This is for viewers that interpret
-  the classic nroff bold/underline convention but not ANSI SGR colours — most
-  notably Midnight Commander's internal file viewer in `nroff` mode. Colours,
-  dim and italic are mapped onto the two available styles (bold / underline).
+  underline) instead of ANSI escapes. Use this for viewers that understand
+  nroff bold/underline but not ANSI color, such as Midnight Commander's
+  internal viewer. Colors, dim and italic map onto bold or underline.
 
 ### Midnight Commander integration
 
-To preview Markdown with formatting inside `mc`'s internal viewer (F3), add the
-following to `~/.config/mc/mc.ext.ini`:
+To preview Markdown with formatting in `mc`'s internal viewer (F3), add a
+viewer rule to your extension file. `~/.config/mc/mc.ext.ini` replaces the
+system file rather than extending it, so start from a copy of the system file
+(for example `/etc/mc/mc.ext.ini`):
+
+```bash
+mkdir -p ~/.config/mc
+cp /etc/mc/mc.ext.ini ~/.config/mc/mc.ext.ini
+```
+
+Then replace its `[markdown]` section with:
 
 ```ini
 [markdown]
-Regex=\.(md|mkd|mdown|markdown)$
+Regex=\\.(md|mkd|mdown|markdown)$
 RegexIgnoreCase=true
 View=%view{nroff} md2p --nroff %f
 ```
 
-`%view{nroff}` tells the internal viewer to interpret the overstrike sequences
-produced by `md2p --nroff`. For full ANSI colour instead, drop `%view` and pipe
-through a colour-capable pager: `View=md2p %f | less -R`.
+- Keep the double backslash: mc unescapes the value, and with a single one the rule never matches.
+- `%view{nroff}` makes the viewer interpret the overstrike sequences.
+- For full ANSI color instead, use a color-capable pager: `View=md2p %f | less -R`.
 
-### Example: Headers
+![Midnight Commander with the md2p viewer rule: F3 on showcase.md opens it formatted in the internal viewer, then F3 on note.md shows its hidden characters as markers](https://raw.githubusercontent.com/raulkivi/md2p/main/img/midnight-commander.gif)
 
-Each ATX header level (`#` through `######`) gets distinct styling — H1 is centred, bold, underlined; H2 gets an underline rule; H3–H6 step down through bold, dim, italic, and plain dim text.
+## Examples
 
-**Source Markdown:**
+### Headers
+
+Each header level gets distinct styling: H1 is centered, bold and underlined; H2 gets an underline rule; H3–H6 step down through bold, dim, italic and plain dim text.
 
 ```markdown
 # H1 Centered Title
@@ -130,15 +124,9 @@ Each ATX header level (`#` through `######`) gets distinct styling — H1 is cen
 ###### H6 Fine Print
 ```
 
-**Terminal output:**
+![Headers rendered by md2p, showing each of the six distinct heading styles](https://raw.githubusercontent.com/raulkivi/md2p/main/img/headers.svg)
 
-![Headers rendered by md2p, showing each of the six distinct heading styles](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/headers.svg)
-
-### Example: Inline Formatting
-
-Bold, italic, bold+italic, inline code, links, and images are all styled distinctly.
-
-**Source Markdown:**
+### Inline formatting
 
 ```markdown
 Plain text with **bold**, *italic*, and ***bold italic***.
@@ -146,13 +134,9 @@ Plain text with **bold**, *italic*, and ***bold italic***.
 Also `inline code`, a [link](https://example.com/docs), and an image ![diagram](diagram.png).
 ```
 
-**Terminal output:**
+![Inline formatting rendered by md2p: bold, italic, bold italic, inline code, a link, and an image placeholder](https://raw.githubusercontent.com/raulkivi/md2p/main/img/inline-formatting.svg)
 
-![Inline formatting rendered by md2p: bold, italic, bold italic, inline code, a link, and an image placeholder](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/inline-formatting.svg)
-
-### Example: Lists, Blockquotes & Code Blocks
-
-**Source Markdown:**
+### Lists, blockquotes and code blocks
 
 ````markdown
 - Top level item
@@ -171,15 +155,9 @@ def hello():
 ```
 ````
 
-**Terminal output:**
+![Nested lists, a blockquote, a horizontal rule, and a fenced code block rendered by md2p](https://raw.githubusercontent.com/raulkivi/md2p/main/img/lists-and-blocks.svg)
 
-![Nested lists, a blockquote, a horizontal rule, and a fenced code block rendered by md2p](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/lists-and-blocks.svg)
-
-### Example: Markdown Table
-
-Tables are rendered as bordered ASCII grids with aligned columns.
-
-**Source Markdown:**
+### Tables
 
 ```markdown
 | Name  | Age | City   |
@@ -188,41 +166,58 @@ Tables are rendered as bordered ASCII grids with aligned columns.
 | Bob   | 25  | Paris  |
 ```
 
-**Terminal output:**
+![A three-column Markdown table rendered by md2p as a bordered ASCII grid](https://raw.githubusercontent.com/raulkivi/md2p/main/img/table.svg)
 
-![A three-column Markdown table rendered by md2p as a bordered ASCII grid](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/table.svg)
+### Hidden and non-printable characters
 
-### Example: Non-printable Characters & Hidden Watermarks
+Any character that is not printable (other than newline, tab and space) is replaced with a red hex marker: `<HH>` for a single byte, `<H0,H1,...>` for a multi-byte UTF-8 sequence. The surrounding text prints normally.
 
-Non-printable characters (anything that is not a printable Unicode character, newline, tab, or space) are never passed through silently. Each such character is replaced inline with a red-background hex marker so it is immediately visible. Single-byte characters are shown as `<HH>`, and multi-byte UTF-8 sequences as `<H0,H1,...>`. Windows `CRLF` line endings are normalised to `LF`; a lone carriage return (which would let input overwrite text already on screen) is flagged as `<0D>`.
+In this example `cat` shows a payment note for 95 EUR. `md2p` shows the variation selectors hidden after "Friday." and the carriage return that hid the real total:
 
-**Source Markdown** (paragraph contains a raw `BEL` U+0007 and a `NULL` U+0000):
+![cat note.md shows an ordinary payment note with a total of 95 EUR; md2p note.md shows the hidden variation selectors and a carriage return that hid the real total of 9950 EUR, each as a red hex marker](https://raw.githubusercontent.com/raulkivi/md2p/main/img/hidden-characters.gif)
 
-```
-This line has a bell \x07 and a null \x00 byte inside.
-```
-
-**Terminal output:**
-
-![A bell and a null byte highlighted with red-background hex markers by md2p](https://raw.githubusercontent.com/raulkivi/md2p/v1.0.5/img/nonprintable.svg)
-
-The surrounding text is printed normally; only the offending bytes are highlighted, making it easy to spot encoding errors or accidental binary content in Markdown source files.
-
-This also catches Unicode **variation selectors** (`U+FE00`–`U+FE0F` and `U+E0100`–`U+E01EF`). Python's `str.isprintable()` reports these as printable even though they render with zero visible width, and they are the block most commonly used today to smuggle hidden bytes — watermarks or payloads — onto an otherwise ordinary-looking character. `md2p` checks for them explicitly and flags each one with the same red-background hex marker, so text carrying a hidden variation-selector payload is not silently invisible in the rendered output.
-
-## Development & Tests
-
-Run the existing tests with `pytest`:
+Try it with a bell (`\a`) and a null byte (`\0`):
 
 ```bash
+printf 'This line has a bell \a and a null \0 byte inside.\n' | md2p
+```
+
+Unicode variation selectors (`U+FE00`–`U+FE0F` and `U+E0100`–`U+E01EF`) get the same marker. They have zero visible width and are the most common way to attach hidden watermarks or payloads to ordinary-looking text, yet Python's `str.isprintable()` reports them as printable, so `md2p` checks for them explicitly.
+
+Windows `CRLF` line endings are converted to `LF`. A lone carriage return, which could overwrite text already on screen, is shown as `<0D>`.
+
+## Limitations
+
+- These are passed through as plain text, not rendered:
+  - strikethrough (`~~text~~`)
+  - task-list checkboxes (`- [ ] item` shows `[ ]` after the bullet)
+  - inline and block HTML
+- Input larger than 50 MB is rejected.
+- There is no built-in pager; pipe to `less -R`.
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
 pytest -q
 ```
 
+### Recording the demo GIFs
+
+The GIFs in `img/` are real takes in `xterm` on a private Xvfb display, recorded by:
+
+```bash
+python3 scripts/demo/record_demo.py [quick-start|hidden-characters|pager|midnight-commander ...]
+```
+
+- Requires Xvfb, `xterm`, `xdotool`, `ffmpeg`, `less`, `mc` and the DejaVu Sans Mono font.
+- Each take runs with a throwaway `HOME`, so nothing from your shell setup appears in the frames.
+- Review every frame before committing a GIF.
+
 ## Contributing
 
-Contributions and bug reports are welcome. Open an issue or submit a pull request.
+Bug reports and pull requests are welcome.
 
 ## License
 
-This project is licensed under the MIT License — see the `LICENSE` file for details.
-
+MIT — see [LICENSE](https://github.com/raulkivi/md2p/blob/main/LICENSE).

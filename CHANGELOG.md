@@ -6,11 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [1.0.5] - 2026-11-11
+## [1.1.0] - 2026-11-19
+
+### Added
+- `-h`/`--help` prints usage and the available options. Previously it was
+  treated as a filename and failed with "File not found".
+
+### Fixed
+- A lone carriage return in a file given by name is now flagged as `<0D>`.
+  The file was read with universal newlines, which turned the CR into a line
+  break, so text it hid stayed hidden. Stdin was not affected.
+- Fenced code blocks keep their color on every line in `less -R`. The style
+  was opened once for the whole block, and `less` resets it at each line.
 
 ### Changed
 - Development and CI dependencies were updated: GitHub Actions in the workflows
-  (including the PyPI publish workflow) and `pytest` 9.2.0. No runtime code changed.
+  (including the PyPI publish workflow) and `pytest` 9.2.0.
 
 ## [1.0.4] - 2026-10-24
 

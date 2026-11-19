@@ -6,7 +6,7 @@ import pytest
 
 from md2p import (
     BG_RED,
-    BOLD, DIM, FG_CYAN, FG_MAGENTA, FG_YELLOW,
+    BOLD, DIM, FG_CYAN, FG_GREEN, FG_MAGENTA, FG_YELLOW,
     ITALIC, RESET, REVERSE, UNDERLINE,
     _replace_nonprintable,
     _strip_ansi_escapes,
@@ -422,6 +422,13 @@ class TestRenderMarkdown:
         assert 'print("hi")' in result
         assert DIM in result
 
+    def test_fenced_code_block_styles_every_line(self):
+        """Each line opens and closes its own style: less -R resets attributes per line."""
+        result = render_markdown('```\nfirst\nsecond\n```')
+
+        for line in ('first', 'second'):
+            assert f'{DIM}{FG_GREEN}{line}{RESET}' in result
+
     def test_fenced_code_block_with_language(self):
         result = render_markdown('```python\nx = 1\n```')
         assert 'x = 1' in result
@@ -549,6 +556,20 @@ class TestMain:
         assert 'Hello' in out
         assert 'World' in out
 
+    def test_mode_file_flags_lone_carriage_return(self, tmp_path, capsys, monkeypatch):
+        """A lone CR in a file is flagged, not turned into a line break by universal newlines."""
+        from md2p import main
+
+        md_file = tmp_path / 'cr.md'
+        md_file.write_bytes(b'Total: 9950 EUR\rTotal: 95 EUR\r\nnext line\n')
+        monkeypatch.setattr('sys.argv', ['md2p', str(md_file)])
+
+        main()
+
+        out = capsys.readouterr().out
+        assert 'Total: 9950 EUR' in out and '<0D>' in out
+        assert out.count('<0D>') == 1  # the CRLF is still a plain line ending
+
     def test_mode_stdin_pipe(self, tmp_path):
         """cat example.md | md2p  reads from stdin and prints rendered output."""
         import io
@@ -596,6 +617,33 @@ class TestMain:
         assert exc_info.value.code == 1
         err = capsys.readouterr().err
         assert 'Usage' in err
+
+    @pytest.mark.parametrize('flag', ['-h', '--help'])
+    def test_help_flag_prints_usage_and_options(self, flag, capsys, monkeypatch):
+        """-h/--help prints usage and every option to stdout, then exits 0."""
+        from md2p import main
+
+        monkeypatch.setattr('sys.argv', ['md2p', flag])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+        captured = capsys.readouterr()
+        assert 'Usage' in captured.out
+        for option in ('--help', '--version', '--nroff'):
+            assert option in captured.out
+        assert captured.err == ''
+
+    def test_help_flag_wins_over_filename(self, capsys, monkeypatch):
+        """--help after a filename still prints help instead of rendering."""
+        from md2p import main
+
+        monkeypatch.setattr('sys.argv', ['md2p', 'missing.md', '--help'])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 0
+        assert 'Usage' in capsys.readouterr().out
 
     def test_mode_file_not_found(self, capsys):
         """md2p missing.md prints an error and exits with code 1."""
